@@ -2,8 +2,6 @@ import asyncio
 import logging
 import datetime
 
-from test import get_gp_results, dict_of_round_name
-
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 from aiogram import F
@@ -13,7 +11,7 @@ from secret import token
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from parser import find_all_races_of_year, current_race_results, formatted_summary_of_year, summary_results_of_year, \
-    formatted_current_race_results
+    pretty_event_results, event_results
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -99,10 +97,32 @@ async def archive_results(message: types.Message):
 
 @dp.callback_query(F.data.regexp(r'\D+\,\s\d{4}$'))
 async def current_gp_result(callback: types.CallbackQuery):
-    d = callback.data.split(',')
-    result = formatted_current_race_results(current_race_results(d[0], int(d[1])))
-    await callback.message.answer(str(result))
+    d = callback.data.split(', ')
+    race = d[0]
+    year = d[1]
+    result = current_race_results(race=race, year=year)
+    race_results = result[0]
+    events = result[1]
 
+    builder = InlineKeyboardBuilder()
+    for event in events:
+        builder.add(types.InlineKeyboardButton(
+            text=f"{event}",
+            callback_data=f"{race}, {year}, {event}")
+        )
+
+    builder.adjust(2)
+    await callback.message.answer(race_results, reply_markup=builder.as_markup())
+
+
+@dp.callback_query()
+async def result_of_event(callback: types.CallbackQuery):
+    callback_list = callback.data.split(', ')
+    race = callback_list[0]
+    year = callback_list[1]
+    event = callback_list[2]
+    results = pretty_event_results(event_results(race, year, event))
+    await callback.message.answer(results)
 
 #
 # @dp.message(Command("GP"))
