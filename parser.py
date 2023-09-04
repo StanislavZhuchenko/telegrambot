@@ -8,6 +8,11 @@ import datetime
 
 
 def find_all_races_of_year(year=datetime.date.today().year):
+    """
+    Get links to access to all races in selected year
+    :param year:
+    :return: dict with name of race as key and link as value
+    """
     current_year = datetime.date.today().year
     if 1950 <= int(year) <= current_year:
         response = requests.get(f'https://www.formula1.com/en/results.html/{year}/races.html')  # Link to all races
@@ -19,8 +24,6 @@ def find_all_races_of_year(year=datetime.date.today().year):
             for a_attrs in a_with_results:
                 all_races[a_attrs.text.strip()] = 'https://www.formula1.com' + a_attrs.attrs['href']
         return all_races
-    else:
-        return None
 
 
 # print('find_all_races_of_year', find_all_races_of_year())
@@ -41,12 +44,18 @@ def summary_results_of_year(year=datetime.date.today().year):
     return race_results
 
 
+# print((summary_results_of_year(2023)))
+
 def formatted_summary_of_year(results):
-    string_of_data = 'GRAND PRIX, WINNER, CAR\n'
-    for data in results:
-        string_of_data += data + ' ' + results[data]['name'] + ' ' + results[data]['abbr'] + ' ' + results[data][
-            'constructor'] + '\n'
+    # string_of_data = 'GRAND PRIX, WINNER, CAR\n'
+    string_of_data = ''
+    for number, data in enumerate(results, start=1):
+        string_of_data += str(number) + '. ' + data + ' - ' + results[data]['name'] + ' ' + results[data][
+            'surname'] + '\n'
     return string_of_data
+
+
+# print(formatted_summary_of_year(summary_results_of_year(2023)))
 
 
 def current_race_results(race, year):
@@ -113,18 +122,15 @@ def current_race_results(race, year):
     return results, buttons
 
 
-# print(formatted_current_race_results(current_race_results('Bahrain', 2023)))
+# print(current_race_results('Bahrain', 2023))
 
 
 def event_results(race, year, event='Race result'):
-    print(current_race_results(race=race, year=year)[1])
     try:
         url_to_event_results = current_race_results(race=race, year=year)[1][event]
-    except KeyError:
+    except Exception:
         return None
 
-    # with open('1990_races_65_brazil_practice-2.html', 'r') as f:
-    #     response = f.read()
     response = requests.get(url_to_event_results)
     page = BeautifulSoup(response.text, 'lxml')
     resultsarchive_table = page.select_one('.resultsarchive-table').select('tr')
@@ -137,23 +143,18 @@ def event_results(race, year, event='Race result'):
         if r.find('th'):
             title.extend(r.text.strip('\n').split('\n'))
 
-    driver_result_dict = {key: '' for key in title}  # create dict with title
+    dict_with_title_of_table = {key: '' for key in title}  # create dict with title
 
     for driver in resultsarchive_table:
-        driver_result_dict
         # Add Driver Name as list to dict driver_result_dict
         driver_result_list = []
         for data in driver:
-            # if data != '\n' and data.find('span') and not data.find('span', {'class': 'suffix seconds'}):
             if data != '\n' and data.find('span', {'class': 'hide-for-tablet'}) and \
                     data.find('span', {'class': 'hide-for-mobile'}) and \
                     data.find('span', {'class': 'uppercase hide-for-desktop'}):
-                # print('Data-->>', data)
                 driver_data_list = data.text.strip('\n').split('\n')
                 if len(driver_data_list[0]) != 0:
                     driver_result_list.extend(driver_data_list)
-
-        # print(driver_result_list)
 
         # data of driver
         driver_td = []
@@ -166,11 +167,9 @@ def event_results(race, year, event='Race result'):
 
         if len(driver_td) != 0:
             driver_td.insert(2, driver_result_list)
-        # print('driver_td', driver_td)
 
         current_driver_results_dict = dict()
-        for key, value in zip(driver_result_dict.keys(), driver_td):
-
+        for key, value in zip(dict_with_title_of_table.keys(), driver_td):
             current_driver_results_dict[key] = value
 
         if len(current_driver_results_dict) != 0:
@@ -178,21 +177,32 @@ def event_results(race, year, event='Race result'):
 
         position += 1
 
-    return results_dict
+    return results_dict, dict_with_title_of_table
 
 
-def pretty_event_results(data: dict):
-    # columns = ['Pos', 'Surname', 'Abbr', 'Constructor', 'Time']
-    columns = ['Pos', 'No', 'Driver', 'Q1', 'Q2', 'Q3', 'Laps']
-    data_list = []
+# print(event_results('Bahrain', 2023, 'Race result'))
 
+
+def pretty_event_results(data):
+    """
+    :param data: tuple with 2 elements. 1 is dict with results, 2 is iterable with titles of table
+    :return: pretty table
+    """
+    columns = [key for key in data[1]]
+    data_list = [columns]
+
+    data = data[0]
     # from dict to list
     for i in data:
-        data_row = [str(i)]
-        for el in columns[1:]:
-            if el == 'Driver':
-                data_row.append(data[i][el][-1])
-            data_row.append(data[i][el])
+        data_row = []
+        for el in columns:
+            if isinstance(data[i][el], list):
+                name = data[i][el][-1]
+                full_name = ' '.join(data[i][el][:-1])
+                # data_row.append(name)
+                data_row.append(full_name)
+            else:
+                data_row.append(data[i][el])
         data_list.append(data_row)
 
     max_columns = []  # list with max width of columns
@@ -200,29 +210,28 @@ def pretty_event_results(data: dict):
         len_el = []
         [len_el.append(len(el)) for el in col]
         max_columns.append(max(len_el))
-
     results = str()
-    # add table header
-    for n, column in enumerate(columns):
-        results += f'{column:{max_columns[n] + 2}}'
-    results += '\n'
+    # # add table header
+    # for n, column in enumerate(columns):
+    #     results += f'{column:{max_columns[n] + 2}}'
+    # results += '\n'
+    # print(repr(results))
 
     # separate '-'
-    results += f'{"-" * len(results)}\n'
-
+    # results += f'{"-" * (len(results) - 1)}\n'
+    data_list.insert(1, ['-' * (sum(max_columns) + (1 * len(columns)))])
     # add table row
     for el in data_list:
         for n, col in enumerate(el):
-            results += f'{col:{max_columns[n] + 2}}'
+            results += f'{col:{max_columns[n] + 1}}'
         results += '\n'
 
     return results
 
-
 # print(event_results('Bahrain', 2023, 'Practice 3'))
-print(pretty_event_results(event_results('Bahrain', 2023, 'Qualifying')))
-
-
-# d = event_results('Bahrain', 2023, 'Qualifying')
+# print(pretty_event_results(event_results('Italy', 2020, 'Qualifying')))
+# print(pretty_event_results(event_results('Australia', 2023, 'Qualifying')[0]))
+# print(len(t))
+# d = event_results('Bahrain', 2023)
 # for key in d:
-#     print(key, d.get(key))
+#     print(key)

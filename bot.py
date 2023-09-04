@@ -1,17 +1,23 @@
 import asyncio
 import logging
 import datetime
+import time
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 from aiogram import F
+from aiogram.types import BufferedInputFile
 
+from schedule_parser import schedule_calendar
 from secret import token
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from parser import find_all_races_of_year, current_race_results, formatted_summary_of_year, summary_results_of_year, \
     pretty_event_results, event_results
+
+from driver_standing import driverstandings
+from imagecreator import pretty_image
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -25,7 +31,7 @@ async def cmd_start(message: types.Message):
         [
             types.KeyboardButton(text='/Results'),
             types.KeyboardButton(text='/Drivers'),
-            types.KeyboardButton(text='/Teams'),
+            types.KeyboardButton(text='/Constructor'),
             types.KeyboardButton(text='/Schedule'),
         ],
     ]
@@ -66,7 +72,7 @@ async def current_year_results(callback: types.CallbackQuery, year=str(datetime.
 
     results = formatted_summary_of_year(all_done_races_of_year)
     await callback.message.answer(
-        results,
+        f'{year} RACE RESULTS:\n'+results,
         reply_markup=builder.as_markup()
     )
 
@@ -80,7 +86,6 @@ async def choice_a_year(callback: types.CallbackQuery):
 async def archive_results(message: types.Message):
     year = message.text
     all_done_races_of_year = summary_results_of_year(year)
-    # year = str(datetime.date.today().year)
     builder = InlineKeyboardBuilder()
     for race in all_done_races_of_year:
         builder.add(types.InlineKeyboardButton(
@@ -90,7 +95,7 @@ async def archive_results(message: types.Message):
     builder.adjust(2)
     results = formatted_summary_of_year(all_done_races_of_year)
     await message.answer(
-        results,
+        f'{year} RACE RESULTS:\n'+results,
         reply_markup=builder.as_markup()
     )
 
@@ -122,50 +127,38 @@ async def result_of_event(callback: types.CallbackQuery):
     year = callback_list[1]
     event = callback_list[2]
     results = pretty_event_results(event_results(race, year, event))
+    if len(results) > 4096:
+        await callback.message.answer(results[:4096])
+        await callback.message.answer(results[4096:])
     await callback.message.answer(results)
 
-#
-# @dp.message(Command("GP"))
-# async def all_grandprix(message: types.Message):
-#     builder = InlineKeyboardBuilder()
-#     for element in dict_of_round_name:
-#         builder.add(types.InlineKeyboardButton(
-#             text=f"{dict_of_round_name[element]}",
-#             callback_data=f"{element}")
-#         )
-#     builder.adjust(3)
-#
-#     await message.answer(
-#         "Choice GP",
-#         reply_markup=builder.as_markup()
-#     )
-#
-#
-# @dp.callback_query(F.data.in_(dict_of_round_name))
-# async def current_grandprix(callback: types.CallbackQuery):
-#     text_for_button = (
-#         'Race result', 'Qualifying',
-#         'Fastest lap', 'Practice 3',
-#         'Pit stop summary', 'Practice 2',
-#         'Starting grid', 'Practice 1'
-#     )
-#
-#     builder = InlineKeyboardBuilder()
-#     for text in text_for_button:
-#         builder.add(types.InlineKeyboardButton(
-#             text=f"{text}",
-#             callback_data=f"{text}, {callback.data}"
-#         ))
-#     builder.adjust(2)
-#
-#     await callback.message.answer(str(dict_of_round_name[callback.data]), reply_markup=builder.as_markup())
-#
-#
-# @dp.callback_query(F.data.contains('Race result'))
-# async def result_of_grandprix(callback: types.CallbackQuery):
-#     number_of_gp = int(callback.data.split(',')[1])
-#     await callback.message.answer(get_gp_results(number_of_gp))
-#
+
+@dp.message(Command('Schedule'))
+async def schedule(message: types.Message):
+    await message.answer(schedule_calendar())
+
+
+@dp.message(Command('Drivers'))
+async def drivers(message: types.Message):
+    pretty_image(pretty_event_results(driverstandings(2023)))
+    # time.sleep(5)
+    with open('test.png', 'rb') as f:
+        await message.answer_photo(
+            BufferedInputFile(f.read(), filename='filename.png')
+        )
+
+
+from aiogram.types import URLInputFile
+
+@dp.message(Command('images'))
+async def upload_photo(message: types.Message):
+ # Отправка файла по ссылке
+    image_from_url = URLInputFile("https://media.formula1.com/d_team_car_fallback_image.png/content/dam/fom-website/teams/2023/aston-martin.png.transform/3col-retina/image.png 2x", bot=bot)
+    result = await message.answer_photo(
+        image_from_url,
+        caption="Изображение по ссылке"
+    )
+
 
 
 async def main():
