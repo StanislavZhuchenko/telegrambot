@@ -12,14 +12,6 @@ def driverstandings(year=datetime.date.today().year):
     response = requests.get(url)
     decoded_content = response.content.decode('utf-8')
     soup = BeautifulSoup(decoded_content, 'lxml')
-
-    # table_titles = soup.find('div', {'class': 'resultsarchive-content'}).find('thead').find_all('th')
-    # titles = []
-    # for title in table_titles:
-    #     if len(title.text) != 0 and not title.text.isspace():
-    #         titles.append(title.text)
-    # print(titles)
-
     table_of_results = soup.find('div', {'class': 'resultsarchive-content'}).find('tbody').find_all('tr')
     driver_standing = dict()
     for row in table_of_results:
@@ -29,7 +21,7 @@ def driverstandings(year=datetime.date.today().year):
         driver = name + ' ' + surname
         row_res = {'Pos': pos, 'driver': driver, 'nationality': nationality, 'constructor': constructor, 'points': points}
         driver_standing[int(pos)] = row_res
-    # titles = {'Pos': '', 'driver': '', 'nation': '', 'constructor': '', 'points': ''}
+    # titles for table result
     titles = ('Pos', 'driver', 'nationality', 'constructor', 'points')
     return driver_standing, titles
 

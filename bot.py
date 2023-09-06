@@ -3,6 +3,7 @@ import logging
 import datetime
 import time
 
+from PIL import Image
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
 from aiogram import F
@@ -126,11 +127,14 @@ async def result_of_event(callback: types.CallbackQuery):
     race = callback_list[0]
     year = callback_list[1]
     event = callback_list[2]
-    results = pretty_event_results(event_results(race, year, event))
-    if len(results) > 4096:
-        await callback.message.answer(results[:4096])
-        await callback.message.answer(results[4096:])
-    await callback.message.answer(results)
+    # results = pretty_event_results(event_results(race, year, event))
+    # if len(results) > 4096:
+    #     await callback.message.answer(results[:4096])
+    #     await callback.message.answer(results[4096:])
+    # await callback.message.answer(results)
+    res = pretty_image(pretty_event_results(event_results(race, year, event)))
+    text_file = BufferedInputFile(res, filename="file.txt")
+    await callback.message.answer_photo(text_file)
 
 
 @dp.message(Command('Schedule'))
@@ -140,12 +144,9 @@ async def schedule(message: types.Message):
 
 @dp.message(Command('Drivers'))
 async def drivers(message: types.Message):
-    pretty_image(pretty_event_results(driverstandings(2023)))
-    # time.sleep(5)
-    with open('test.png', 'rb') as f:
-        await message.answer_photo(
-            BufferedInputFile(f.read(), filename='filename.png')
-        )
+    res = pretty_image(pretty_event_results(driverstandings(2023)))
+    text_file = BufferedInputFile(res, filename="file.txt")
+    await message.answer_photo(text_file)
 
 
 from aiogram.types import URLInputFile
