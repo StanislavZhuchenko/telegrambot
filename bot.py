@@ -101,14 +101,40 @@ async def archive_results(message: types.Message):
     )
 
 
+# @dp.callback_query(F.data.regexp(r'\D+\,\s\d{4}$'))
+# async def current_gp_result(callback: types.CallbackQuery):
+#     d = callback.data.split(', ')
+#     race = d[0]
+#     year = d[1]
+#     result = current_race_results(race=race, year=year)
+#     race_results = result[0]
+#     events = result[1]
+#
+#     builder = InlineKeyboardBuilder()
+#     for event in events:
+#         builder.add(types.InlineKeyboardButton(
+#             text=f"{event}",
+#             callback_data=f"{race}, {year}, {event}")
+#         )
+#     builder.adjust(2)
+#     await callback.message.answer(race_results, reply_markup=builder.as_markup())
+
 @dp.callback_query(F.data.regexp(r'\D+\,\s\d{4}$'))
 async def current_gp_result(callback: types.CallbackQuery):
+    """
+    Anwser with image of results of GP
+    :param callback:
+    :return:
+    """
     d = callback.data.split(', ')
     race = d[0]
     year = d[1]
     result = current_race_results(race=race, year=year)
-    race_results = result[0]
+    # race_results = result[0]
     events = result[1]
+
+    result = pretty_image(pretty_event_results(event_results(race, year)))
+    photo_file = BufferedInputFile(result, filename="file.txt")
 
     builder = InlineKeyboardBuilder()
     for event in events:
@@ -116,9 +142,8 @@ async def current_gp_result(callback: types.CallbackQuery):
             text=f"{event}",
             callback_data=f"{race}, {year}, {event}")
         )
-
     builder.adjust(2)
-    await callback.message.answer(race_results, reply_markup=builder.as_markup())
+    await callback.message.answer_photo(photo_file, reply_markup=builder.as_markup())
 
 
 @dp.callback_query()
