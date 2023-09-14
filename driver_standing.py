@@ -11,8 +11,15 @@ def driverstandings(year=datetime.date.today().year):
         print(e)
     response = requests.get(url)
     decoded_content = response.content.decode('utf-8')
-    soup = BeautifulSoup(decoded_content, 'lxml')
-    table_of_results = soup.find('div', {'class': 'resultsarchive-content'}).find('tbody').find_all('tr')
+    page = BeautifulSoup(decoded_content, 'lxml')
+
+    # Parse title of page and make it more readable
+    page_title = page.select_one('title')
+    page_title_list = [el.strip() for el in page_title.text.strip().split('\n') if len(el) != 0 and not el.isspace()]
+    page_title = ' '.join(page_title_list)
+
+
+    table_of_results = page.find('div', {'class': 'resultsarchive-content'}).find('tbody').find_all('tr')
     driver_standing = dict()
     for row in table_of_results:
         res = row.text.split('\n')
@@ -23,11 +30,11 @@ def driverstandings(year=datetime.date.today().year):
         driver_standing[int(pos)] = row_res
     # titles for table result
     titles = ('Pos', 'driver', 'nationality', 'constructor', 'points')
-    return driver_standing, titles
+    return driver_standing, titles, page_title
 
 
 if __name__ == '__main__':
-    d = driverstandings(2023)
+    d = driverstandings(1950)
     print(d)
 
     print(pretty_event_results(d))

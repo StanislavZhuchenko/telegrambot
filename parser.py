@@ -1,12 +1,14 @@
 import requests
 import logging
 from bs4 import BeautifulSoup
+from features import time_execution
 import datetime
+
 
 
 # logging.basicConfig(level=logging.DEBUG)
 
-
+# @time_execution
 def find_all_races_of_year(year=datetime.date.today().year):
     """
     Get links to access to all races in selected year
@@ -128,12 +130,20 @@ def current_race_results(race, year):
 def event_results(race, year, event='Race result'):
     try:
         url_to_event_results = current_race_results(race=race, year=year)[1][event]
-    except Exception:
-        return None
+    except Exception as e:
+        return e
 
     response = requests.get(url_to_event_results)
-    page = BeautifulSoup(response.text, 'lxml')
+    decoded_content = response.content.decode('utf-8')
+    page = BeautifulSoup(decoded_content, 'lxml')
+
     resultsarchive_table = page.select_one('.resultsarchive-table').select('tr')
+
+    # Parse title of page and make it more readable
+    page_title = page.select_one('title')
+    page_title_list = [el.strip() for el in page_title.text.strip().split('\n') if len(el) != 0 and not el.isspace()]
+    page_title = ' '.join(page_title_list)
+
     results_dict = dict()
     position = 0
     title = []
@@ -177,7 +187,7 @@ def event_results(race, year, event='Race result'):
 
         position += 1
 
-    return results_dict, dict_with_title_of_table
+    return results_dict, dict_with_title_of_table, page_title
 
 
 # print(event_results('Bahrain', 2023, 'Race result'))
@@ -188,6 +198,12 @@ def pretty_event_results(data):
     :param data: tuple with 2 elements. 1 is dict with results, 2 is iterable with titles of table
     :return: pretty table
     """
+    # If event_results is a data
+    if len(data) >= 3:
+        results = str(data[2]) + '\n'
+    else:
+        results = str()
+
     columns = [key for key in data[1]]
     data_list = [columns]
 
@@ -210,17 +226,10 @@ def pretty_event_results(data):
         len_el = []
         [len_el.append(len(el)) for el in col]
         max_columns.append(max(len_el))
-    results = str()
-    # # add table header
-    # for n, column in enumerate(columns):
-    #     results += f'{column:{max_columns[n] + 2}}'
-    # results += '\n'
-    # print(repr(results))
 
-    # separate '-'
-    # results += f'{"-" * (len(results) - 1)}\n'
     data_list.insert(1, ['-' * (sum(max_columns) + (1 * len(columns)))])
     # add table row
+
     for el in data_list:
         for n, col in enumerate(el):
             results += f'{col:{max_columns[n] + 1}}'
@@ -228,10 +237,12 @@ def pretty_event_results(data):
 
     return results
 
-# print(event_results('Bahrain', 2023, 'Practice 3'))
-# print(pretty_event_results(event_results('Italy', 2020, 'Qualifying')))
-# print(pretty_event_results(event_results('Australia', 2023, 'Qualifying')[0]))
+# print(event_results('Bahrain', 2023, 'Race result'))
+# print(pretty_event_results(event_results('Italy', 2023, 'Qualifying')))
+# print(pretty_event_results(event_results('Austria', 2023, 'Sprint grid')))
 # print(len(t))
 # d = event_results('Bahrain', 2023)
 # for key in d:
 #     print(key)
+# if __name__ == "__main__":
+#     print(event_results('Bahrain', 2023))
