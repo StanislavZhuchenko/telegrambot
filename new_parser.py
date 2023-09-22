@@ -11,7 +11,7 @@ from features import time_execution
 # All_race = find_all_races_of_year(year)
 
 
-@time_execution
+# @time_execution
 def current_race(race, year):
     url = find_all_races_of_year(year)[race]
 
@@ -28,19 +28,14 @@ def current_race(race, year):
     return buttons
 
 
-@time_execution
-def event_results(race, year, event='Race result'):
+# @time_execution
+def new_event_results(race, year, event='Race result'):
     # Try in one function
     url = find_all_races_of_year(year)[race]
 
-    t_start = datetime.datetime.now()
     response = requests.get(url=url)
     decoded_content = response.content.decode('utf-8')
     page = BeautifulSoup(decoded_content, 'lxml')
-    t_finish = datetime.datetime.now()
-    t_delta1 = t_finish - t_start
-    print(f"Time of load page: {t_delta1.microseconds / 1000} ms")
-
 
     # Find all events which were at this race and returns name to
     resultsarchive_side_nav = page.select_one('.resultsarchive-side-nav').find_all('a')
@@ -55,21 +50,6 @@ def event_results(race, year, event='Race result'):
         response = requests.get(url_to_event_results)
         decoded_content = response.content.decode('utf-8')
         page = BeautifulSoup(decoded_content, 'lxml')
-        t_finish = datetime.datetime.now()
-        t_delta2 = t_finish - t_start
-        print(f"Time of load 2 page: {t_delta2.microseconds / 1000} ms")
-        print(f"Summary time to load {(t_delta1.microseconds + t_delta2.microseconds)/1000} ms")
-
-
-
-    #############
-
-    # all_events = current_race(race, year)
-    # url_to_event_results = all_events[event]
-
-    # response = requests.get(url_to_event_results)
-    # decoded_content = response.content.decode('utf-8')
-    # page = BeautifulSoup(decoded_content, 'lxml')
 
     resultsarchive_table = page.select_one('.resultsarchive-table').select('tr')
 
@@ -124,17 +104,21 @@ def event_results(race, year, event='Race result'):
     return results_dict, dict_with_title_of_table, page_title, all_events
 
 
+
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    t_start = datetime.datetime.now()
-
-    # all_races = find_all_races_of_year()
-    # results = current_race('Bahrain', 2023)
-    results2 = event_results('Bahrain', 2023, 'Fastest laps')
-    # results2 = event_results('Bahrain', 2023, 'Race result')
-    t_finish = datetime.datetime.now()
-    t_delta = t_finish - t_start
-    print(f"Summary time: {t_delta.microseconds / 1000} ms")
-    # for race in all_races:
-    #     print(race, all_races.get(race))
-    # print(results2)
+    # t_start = datetime.datetime.now()
+    #
+    # # all_races = find_all_races_of_year()
+    # # results = current_race('Bahrain', 2023)
+    # results2 = new_event_results('Bahrain', 2023, 'Fastest laps')
+    # # results2 = event_results('Bahrain', 2023, 'Race result')
+    # t_finish = datetime.datetime.now()
+    # t_delta = t_finish - t_start
+    # print(f"Summary time: {t_delta.microseconds / 1000} ms")
+    # # for race in all_races:
+    # #     print(race, all_races.get(race))
+    # # print(results2)
+    print(contstructor_standings(200))

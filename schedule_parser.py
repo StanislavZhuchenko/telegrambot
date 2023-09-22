@@ -1,6 +1,9 @@
+import calendar
+
 import requests
 import datetime
 from bs4 import BeautifulSoup
+
 
 def schedule_calendar():
     next_event = ""
@@ -19,23 +22,40 @@ def schedule_calendar():
         date_end = event.select_one('[class="end-date"]').text
         place = event.select_one('[class="event-place d-block"]')
         upcoming_event_month = event.select_one('[class="month-wrapper f1-wide--xxs f1-uppercase"]')
+
         if not upcoming_event_month:
             upcoming_event_month = event.select_one('[class="month-wrapper f1-wide--xxs"]')
-        # if not upcoming_event_month:
-        #     upcoming_event_month = calendar.month_abbr[datetime.date.today().month]
 
-        if '-' in upcoming_event_month.text:
-            first_month = upcoming_event_month.text.split('-')[0]
+        try:
+            upcoming_event_month_text = upcoming_event_month.text
+        except AttributeError:
+            upcoming_event_month = calendar.month_abbr[datetime.date.today().month]
+
+        if '-' in upcoming_event_month_text:
+            first_month = upcoming_event_month_text.split('-')[0]
+            second_month = upcoming_event_month_text.split('-')[1]
+            upcoming_event_month_text = '\-'.join(upcoming_event_month_text.split('-'))
+
         else:
-            first_month = upcoming_event_month.text
+            first_month = upcoming_event_month_text
+            second_month = upcoming_event_month_text
+
         first_date = f"{date_start} {first_month} {today.year}"
         full_date_start = datetime.datetime.strptime(first_date, '%d %b %Y')
+
+        second_date = f"{date_end} {second_month} {today.year}"
+        full_date_end = datetime.datetime.strptime(second_date, '%d %b %Y')
+
         if full_date_start.date() > today.date() and counter == 0:
             counter += 1
-            next_event = f"NEXT>>> {round_numb.text}: {event_place.text}{date_start}-{date_end} {upcoming_event_month.text}\n\n"
+            next_event = f"NEXT\\>\\>\\> {round_numb.text}: {event_place.text}{date_start}\\-{date_end} {upcoming_event_month_text}\n\n"
+        elif full_date_start.date() <= today.date() <= full_date_end.date():
+            current_event = f"CURRENT EVENT\\>\\>\\> {round_numb.text}: {event_place.text}{date_start}\\-{date_end} {upcoming_event_month_text}\n\n"
 
-        results += f"{round_numb.text}: {event_place.text}{date_start}-{date_end} {upcoming_event_month.text}\n"
-    return next_event + results
+        results += f"{round_numb.text}: {event_place.text}{date_start}\\-{date_end} {upcoming_event_month_text}\n"
+    return current_event + next_event + results
+
+
+
 
 # print(schedule_calendar())
-

@@ -18,7 +18,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from parser import find_all_races_of_year, current_race_results, formatted_summary_of_year, summary_results_of_year, \
     pretty_event_results
 
-from new_parser import event_results
+from new_parser import new_event_results
 
 from driver_standing import driverstandings
 from imagecreator import pretty_image
@@ -205,7 +205,7 @@ async def current_gp_result(callback: types.CallbackQuery):
     d = callback.data.split(', ')
     race = d[0]
     year = d[1]
-    event_res = event_results(race, year)
+    event_res = new_event_results(race, year)
     events = event_res[3]
     events.pop('Race result')  # remove 'Race results' from events that don't duplicate already posted results
     result = pretty_image(pretty_event_results(event_res))
@@ -227,7 +227,7 @@ async def result_of_event(callback: types.CallbackQuery):
     race = callback_list[0]
     year = callback_list[1]
     event = callback_list[2]
-    res = pretty_image(pretty_event_results(event_results(race, year, event)))
+    res = pretty_image(pretty_event_results(new_event_results(race, year, event)))
     text_file = BufferedInputFile(res, filename="file.txt")
     await callback.message.answer_photo(text_file, caption=f"{event} in {race} {year}")
 
