@@ -2,7 +2,7 @@ import logging
 import datetime
 import requests
 from bs4 import BeautifulSoup
-from parser import find_all_races_of_year
+from parser import find_all_races_of_year_2
 from features import time_execution
 
 
@@ -13,7 +13,7 @@ from features import time_execution
 
 # @time_execution
 def current_race(race, year):
-    url = find_all_races_of_year(year)[race]
+    url = find_all_races_of_year_2(year)[0][race]
 
     response = requests.get(url=url)
     decoded_content = response.content.decode('utf-8')
@@ -31,14 +31,17 @@ def current_race(race, year):
 # @time_execution
 def new_event_results(race, year, event='Race result'):
     # Try in one function
-    url = find_all_races_of_year(year)[race]
+    url = find_all_races_of_year_2(year)[0][race]
 
     response = requests.get(url=url)
     decoded_content = response.content.decode('utf-8')
     page = BeautifulSoup(decoded_content, 'lxml')
 
     # Find all events which were at this race and returns name to
-    resultsarchive_side_nav = page.select_one('.resultsarchive-side-nav').find_all('a')
+    try:
+        resultsarchive_side_nav = page.select_one('.resultsarchive-side-nav').find_all('a')
+    except AttributeError:
+        return "No results yet"
     buttons = dict()
     for ev in resultsarchive_side_nav:
         buttons[ev.text] = 'https://www.formula1.com' + ev.attrs['href']
@@ -121,4 +124,4 @@ if __name__ == '__main__':
     # # for race in all_races:
     # #     print(race, all_races.get(race))
     # # print(results2)
-    print(contstructor_standings(200))
+    print(new_event_results('Japan', 2023))

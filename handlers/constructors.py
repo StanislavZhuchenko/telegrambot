@@ -38,7 +38,6 @@ async def archive_constructor_standings(callback: types.CallbackQuery):
 @router.message(F.text.regexp(r'car [1|2][9|0][\d]{2}$'))
 async def constructor(message: types.Message):
     year = message.text.split(' ')[1]
-    print(year)
     results = pretty_image(pretty_event_results(constructor_standings(year=int(year))))
     text_file = BufferedInputFile(results, filename="results")
     await message.answer_photo(text_file)

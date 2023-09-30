@@ -1,13 +1,13 @@
 import io
 
 from PIL import Image, ImageDraw, ImageFont
-from parser import formatted_summary_of_year, summary_results_of_year, pretty_event_results, event_results
+from parser import formatted_summary_of_year, pretty_event_results
 from driver_standing import driverstandings
 from features import time_execution
 
 # txt = formatted_summary_of_year(summary_results_of_year(2023))
 # txt = pretty_event_results(event_results('Austria', 2023, 'Sprint grid'))
-txt = pretty_event_results(driverstandings(2002))
+# txt = pretty_event_results(driverstandings(2002))
 
 @time_execution
 def pretty_image(string: str):
@@ -50,11 +50,11 @@ def pretty_image(string: str):
     return image_bytes.getvalue()
 
 
-if __name__ == '__main__':
-    data = pretty_image(txt)
-    image_bytes = io.BytesIO(data)
-    with Image.open(image_bytes) as im:
-        im.show()
+# if __name__ == '__main__':
+#     data = pretty_image(txt)
+#     image_bytes = io.BytesIO(data)
+#     with Image.open(image_bytes) as im:
+#         im.show()
 
 
 
